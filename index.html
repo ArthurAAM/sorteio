@@ -1,0 +1,488 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex">
+<title>Amigo Oculto</title>
+<style>
+  :root {
+    --fundo: #0d2b1e;
+    --fundo-claro: #17432e;
+    --cartao: #fffaf0;
+    --tinta: #1f1d1a;
+    --suave: #6f6a5f;
+    --linha: #e8dfcc;
+    --creme: #f3ead6;
+    --vermelho: #b8322a;
+    --vermelho-escuro: #922620;
+    --verde: #1f7a4d;
+    --verde-escuro: #17603c;
+    --ouro: #e3b04b;
+    --sobre-fundo: #f4ecdb;
+    --sobre-fundo-suave: #c9c0ab;
+  }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; }
+  body {
+    min-height: 100vh;
+    padding: 40px 16px 56px;
+    font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+    color: var(--sobre-fundo);
+    background: var(--fundo) radial-gradient(120% 70% at 50% 0%, var(--fundo-claro), var(--fundo) 70%) fixed;
+  }
+  main { max-width: 540px; margin: 0 auto; }
+  header { text-align: center; margin-bottom: 24px; }
+  .selo { font-size: 44px; line-height: 1; }
+  h1 { margin: 12px 0 4px; font-size: 28px; letter-spacing: -0.01em; }
+  .subtitulo { margin: 0; font-size: 15px; color: var(--sobre-fundo-suave); }
+  .cartao { padding: 24px; border-radius: 18px; color: var(--tinta); background: var(--cartao); box-shadow: 0 18px 40px rgba(0, 0, 0, .35); }
+  .cartao + .cartao { margin-top: 16px; }
+  h2 { margin: 0 0 12px; font-size: 18px; }
+  p { margin: 0 0 16px; line-height: 1.5; }
+  .nota { font-size: 14px; color: var(--suave); }
+  .nomes { display: flex; flex-wrap: wrap; gap: 8px; margin: 0 0 20px; padding: 0; list-style: none; }
+  .nomes li { padding: 6px 14px; border: 1px solid var(--linha); border-radius: 999px; background: var(--creme); font-size: 15px; font-weight: 600; }
+  button { width: 100%; padding: 14px 18px; border: 0; border-radius: 12px; font: inherit; font-size: 16px; font-weight: 700; color: #fff; background: var(--vermelho); cursor: pointer; transition: background .2s, transform .1s; }
+  button:hover { background: var(--vermelho-escuro); }
+  button:active { transform: scale(.98); }
+  button:focus-visible, input:focus-visible { outline: 3px solid var(--ouro); outline-offset: 2px; }
+  button.secundario { color: var(--tinta); background: transparent; border: 1px solid var(--linha); }
+  button.secundario:hover { background: var(--creme); }
+  button.pequeno { width: auto; padding: 9px 12px; border-radius: 10px; font-size: 14px; }
+  button.whatsapp { background: var(--verde); }
+  button.whatsapp:hover { background: var(--verde-escuro); }
+  .status { margin: 0 0 16px; padding: 12px 14px; border-radius: 12px; font-size: 14px; font-weight: 600; color: var(--verde-escuro); background: #e7f3eb; }
+  .status.erro { color: var(--vermelho-escuro); background: #fbeceb; }
+  .envios { margin: 0 0 16px; padding: 0; list-style: none; }
+  .envios li { display: flex; align-items: center; gap: 8px; padding: 10px 0; border-top: 1px solid var(--linha); }
+  .envios li:first-child { border-top: 0; }
+  .envios .nome { flex: 1; min-width: 0; font-weight: 700; overflow-wrap: anywhere; }
+  label { display: block; margin-bottom: 6px; font-size: 14px; font-weight: 600; }
+  input { width: 100%; margin-bottom: 10px; padding: 12px; border: 1px solid var(--linha); border-radius: 10px; font: inherit; font-size: 15px; color: var(--tinta); background: #fff; }
+  .presente { display: flex; flex-direction: column; align-items: center; gap: 10px; padding: 28px 18px; background: linear-gradient(180deg, var(--vermelho), var(--vermelho-escuro)); }
+  .presente .icone { font-size: 64px; line-height: 1; animation: balancar 2.4s ease-in-out infinite; }
+  .revelado { text-align: center; animation: surgir .45s ease-out; }
+  .revelado .rotulo { margin: 0; font-size: 15px; color: var(--suave); }
+  .revelado .sorteado { margin: 6px 0 20px; font-size: clamp(36px, 12vw, 56px); font-weight: 800; letter-spacing: -0.02em; color: var(--vermelho); overflow-wrap: anywhere; }
+  .id-sorteio { font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; letter-spacing: .06em; }
+  .oculto { display: none !important; }
+  @keyframes balancar { 0%, 60%, 100% { transform: rotate(0); } 10% { transform: rotate(-9deg); } 20% { transform: rotate(9deg); } 30% { transform: rotate(-5deg); } 40% { transform: rotate(3deg); } }
+  @keyframes surgir { from { opacity: 0; transform: scale(.85); } to { opacity: 1; transform: scale(1); } }
+  @media (prefers-reduced-motion: reduce) { *, *::before, *::after { animation: none !important; transition: none !important; } }
+</style>
+</head>
+<body>
+<main>
+  <header>
+    <div class="selo" aria-hidden="true">🎁</div>
+    <h1>Amigo Oculto</h1>
+    <p class="subtitulo" id="subtitulo">Sorteio em ciclo único</p>
+  </header>
+
+  <!-- Tela do participante: abre pelo link pessoal (#token) -->
+  <section id="tela-participante" class="oculto">
+    <div class="cartao">
+      <p class="nota">Sorteio <span class="id-sorteio" id="p-sorteio"></span></p>
+      <h2 id="p-ola"></h2>
+      <p id="p-aviso"></p>
+      <div id="p-fechado">
+        <button class="presente" id="p-revelar">
+          <span class="icone" aria-hidden="true">🎁</span>
+          <span>Toque para revelar</span>
+        </button>
+      </div>
+      <div id="p-aberto" class="revelado oculto" aria-live="polite">
+        <p class="rotulo">Você tirou</p>
+        <p class="sorteado" id="p-nome"></p>
+        <button class="secundario" id="p-esconder">Esconder</button>
+      </div>
+    </div>
+  </section>
+
+  <!-- Tela de link ou código inválido -->
+  <section id="tela-erro" class="oculto">
+    <div class="cartao">
+      <div class="status erro">Link ou código inválido</div>
+      <p>Este link não é de um sorteio válido. Confira se você copiou o link inteiro.</p>
+      <button class="secundario" id="e-voltar">Voltar</button>
+    </div>
+  </section>
+
+  <!-- Tela inicial: abre sem #token. É o que os amigos veem no endereço publicado. -->
+  <section id="tela-inicio" class="oculto">
+    <div class="cartao">
+      <h2>Participantes</h2>
+      <ul class="nomes" id="i-nomes"></ul>
+      <p>Cada pessoa recebe do organizador um link pessoal. Abra o seu link para ver quem você tirou.</p>
+      <p class="nota">Não abra o link de outra pessoa: o link mostra o amigo oculto de quem o recebeu.</p>
+    </div>
+    <div class="cartao">
+      <h2>Recebeu um código?</h2>
+      <form id="c-form">
+        <label for="c-codigo">Cole o link ou o código</label>
+        <input type="text" id="c-codigo" autocomplete="off" autocapitalize="off" spellcheck="false">
+        <button type="submit">Ver meu amigo oculto</button>
+      </form>
+    </div>
+  </section>
+
+  <!-- Tela do organizador: abre só pelo endereço #organizar -->
+  <section id="tela-organizador" class="oculto">
+    <div class="cartao">
+      <h2>Participantes</h2>
+      <ul class="nomes" id="o-nomes"></ul>
+      <button id="o-sortear">Sortear</button>
+      <div id="o-resultado" class="oculto">
+        <div class="status" id="o-status" role="status"></div>
+        <p class="nota">Envie a cada pessoa só a mensagem dela. Não abra o link dos outros: assim ninguém sabe quem tirou quem.</p>
+        <div id="o-base" class="oculto">
+          <label for="o-endereco">Endereço da página publicada</label>
+          <input type="url" id="o-endereco" placeholder="https://seu-usuario.github.io/sorteio/" autocomplete="off">
+          <p class="nota">Você abriu o arquivo direto do computador. Cole o endereço onde a página está publicada para enviar links. Sem endereço, cada pessoa recebe um código para colar na página.</p>
+        </div>
+        <ul class="envios" id="o-envios"></ul>
+        <button class="secundario" id="o-novo">Fazer novo sorteio</button>
+      </div>
+    </div>
+  </section>
+</main>
+
+<script>
+// Edite esta lista para mudar os participantes.
+const PARTICIPANTES = ["Arthur", "Vitor", "Gabriel", "Luis", "Primeiro", "JG"];
+
+// ==== núcleo do sorteio ====
+const PREFIXO = "AO1";
+const TAMANHO_TOKEN = 48;
+const LETRAS_ID = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
+
+function inteiroAleatorio(max) {
+  const limite = Math.floor(0x100000000 / max) * max; // descarta a sobra: sem viés de módulo
+  const valor = new Uint32Array(1);
+  do { crypto.getRandomValues(valor); } while (valor[0] >= limite);
+  return valor[0] % max;
+}
+
+function embaralhar(lista) {
+  const copia = [...lista];
+  for (let i = copia.length - 1; i > 0; i--) {
+    const j = inteiroAleatorio(i + 1);
+    [copia[i], copia[j]] = [copia[j], copia[i]];
+  }
+  return copia;
+}
+
+// Ciclo único: embaralha a fila e cada pessoa tira a próxima; a última tira a primeira.
+function sortearCiclo(nomes) {
+  const fila = embaralhar(nomes);
+  return fila.map((de, i) => ({ de, para: fila[(i + 1) % fila.length] }));
+}
+
+function ehCicloUnico(pares, nomes) {
+  const tira = new Map(pares.map((p) => [p.de, p.para]));
+  const recebe = new Set(pares.map((p) => p.para));
+  if (pares.length !== nomes.length || tira.size !== nomes.length || recebe.size !== nomes.length) return false;
+  if (!nomes.every((n) => tira.has(n) && recebe.has(n))) return false;
+  let atual = nomes[0];
+  for (let passo = 1; passo <= nomes.length; passo++) {
+    atual = tira.get(atual);
+    if (atual === nomes[0]) return passo === nomes.length;
+  }
+  return false;
+}
+
+function novoIdSorteio() {
+  let id = "";
+  for (let i = 0; i < 4; i++) id += LETRAS_ID[inteiroAleatorio(LETRAS_ID.length)];
+  return id;
+}
+
+function paraBase64Url(bytes) {
+  let binario = "";
+  bytes.forEach((b) => { binario += String.fromCharCode(b); });
+  return btoa(binario).replace(/\+/g, "-").replace(/\//g, "_").replace(/=+$/, "");
+}
+
+function deBase64Url(texto) {
+  let base64 = texto.replace(/-/g, "+").replace(/_/g, "/");
+  while (base64.length % 4) base64 += "=";
+  return Uint8Array.from(atob(base64), (c) => c.charCodeAt(0));
+}
+
+// Embaralha os bytes do token para o nome não ficar legível no link. Não é criptografia.
+function fluxoXor(sal, tamanho) {
+  let a = (sal[0] | (sal[1] << 8) | (sal[2] << 16) | (sal[3] << 24)) ^ 0x5ec2e7a1;
+  const saida = new Uint8Array(tamanho);
+  for (let i = 0; i < tamanho; i++) {
+    a = (a + 0x6d2b79f5) | 0;
+    let t = Math.imul(a ^ (a >>> 15), 1 | a);
+    t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t;
+    saida[i] = (t ^ (t >>> 14)) & 0xff;
+  }
+  return saida;
+}
+
+// Todo token tem o mesmo tamanho: o comprimento do link não denuncia o nome sorteado.
+function gerarToken(idSorteio, de, para) {
+  const texto = new TextEncoder().encode([PREFIXO, idSorteio, de, para, ""].join("|"));
+  const dados = new Uint8Array(Math.max(TAMANHO_TOKEN, texto.length)).fill(46); // 46 = "."
+  dados.set(texto);
+  const sal = crypto.getRandomValues(new Uint8Array(4));
+  const fluxo = fluxoXor(sal, dados.length);
+  const saida = new Uint8Array(4 + dados.length);
+  saida.set(sal);
+  dados.forEach((b, i) => { saida[4 + i] = b ^ fluxo[i]; });
+  return paraBase64Url(saida);
+}
+
+function lerToken(token) {
+  try {
+    const bytes = deBase64Url(token.trim());
+    if (bytes.length < 5) return null;
+    const sal = bytes.subarray(0, 4);
+    const corpo = bytes.subarray(4);
+    const fluxo = fluxoXor(sal, corpo.length);
+    const dados = corpo.map((b, i) => b ^ fluxo[i]);
+    const partes = new TextDecoder("utf-8", { fatal: true }).decode(dados).split("|");
+    if (partes.length !== 5 || partes[0] !== PREFIXO || !partes[2] || !partes[3]) return null;
+    if (!/^\.*$/.test(partes[4])) return null; // enchimento corrompido: link copiado pela metade ou alterado
+    return { idSorteio: partes[1], de: partes[2], para: partes[3] };
+  } catch (erro) {
+    return null;
+  }
+}
+// ==== fim do núcleo ====
+
+const CHAVE_SORTEIO = "amigo-oculto:sorteio";
+const CHAVE_ENDERECO = "amigo-oculto:endereco";
+const ROTA_ORGANIZADOR = "organizar"; // o organizador abre <endereço>#organizar
+const $ = (id) => document.getElementById(id);
+let sorteioAtual = null;
+
+function lerArmazenado(chave) {
+  try { return JSON.parse(localStorage.getItem(chave)); } catch (erro) { return null; }
+}
+
+function gravarArmazenado(chave, valor) {
+  try { localStorage.setItem(chave, JSON.stringify(valor)); } catch (erro) { /* sem armazenamento: o sorteio vale até recarregar */ }
+}
+
+function mostrarTela(id) {
+  ["tela-inicio", "tela-organizador", "tela-participante", "tela-erro"].forEach((tela) => {
+    $(tela).classList.toggle("oculto", tela !== id);
+  });
+}
+
+function listarNomes(idLista) {
+  $(idLista).replaceChildren(...PARTICIPANTES.map((nome) => {
+    const item = document.createElement("li");
+    item.textContent = nome;
+    return item;
+  }));
+}
+
+// ---- tela inicial ----
+function mostrarInicio() {
+  listarNomes("i-nomes");
+  $("subtitulo").textContent = "Sorteio em ciclo único";
+  document.title = "Amigo Oculto";
+  mostrarTela("tela-inicio");
+}
+
+// ---- tela do participante ----
+function mostrarParticipante(dados) {
+  $("p-sorteio").textContent = dados.idSorteio;
+  $("p-ola").textContent = `Olá, ${dados.de}!`;
+  $("p-aviso").textContent = `Este link é só de ${dados.de}. Se você não é ${dados.de}, feche esta página sem revelar.`;
+  $("p-nome").textContent = dados.para;
+  $("p-fechado").classList.remove("oculto");
+  $("p-aberto").classList.add("oculto");
+  $("subtitulo").textContent = "Seu sorteio chegou";
+  document.title = `Amigo Oculto: ${dados.de}`;
+  mostrarTela("tela-participante");
+}
+
+// ---- tela do organizador ----
+function ehPaginaPublicada() {
+  return location.protocol === "http:" || location.protocol === "https:";
+}
+
+function enderecoBase() {
+  if (ehPaginaPublicada()) return location.origin + location.pathname;
+  const digitado = $("o-endereco").value.trim().split("#")[0];
+  return /^https?:\/\/\S+$/i.test(digitado) ? digitado : "";
+}
+
+function mensagemPara(envio) {
+  const base = enderecoBase();
+  if (base) {
+    return `🎁 Amigo oculto (sorteio ${sorteioAtual.id})\n${envio.nome}, este link é só seu. Abra e veja quem você tirou:\n${base}#${envio.token}`;
+  }
+  return `🎁 Amigo oculto (sorteio ${sorteioAtual.id})\n${envio.nome}, este é o seu código:\n${envio.token}\nAbra a página do sorteio, cole o código e veja quem você tirou.`;
+}
+
+async function copiarTexto(texto) {
+  try {
+    await navigator.clipboard.writeText(texto);
+    return true;
+  } catch (erro) {
+    const area = document.createElement("textarea");
+    area.value = texto;
+    area.setAttribute("readonly", "");
+    area.style.position = "fixed";
+    area.style.opacity = "0";
+    document.body.appendChild(area);
+    area.select();
+    const copiou = document.execCommand("copy");
+    area.remove();
+    return copiou;
+  }
+}
+
+function sorteioValido(sorteio) {
+  return Boolean(sorteio) && typeof sorteio.id === "string" && Array.isArray(sorteio.envios)
+    && sorteio.envios.length === PARTICIPANTES.length
+    && PARTICIPANTES.every((nome) => sorteio.envios.some((e) => e.nome === nome && typeof e.token === "string"));
+}
+
+function renderizarEnvios() {
+  const lista = $("o-envios");
+  lista.replaceChildren();
+  sorteioAtual.envios.forEach((envio) => {
+    const item = document.createElement("li");
+
+    const nome = document.createElement("span");
+    nome.className = "nome";
+    nome.textContent = envio.nome;
+
+    const copiar = document.createElement("button");
+    copiar.className = "pequeno secundario";
+    copiar.textContent = "Copiar";
+    copiar.setAttribute("aria-label", `Copiar a mensagem de ${envio.nome}`);
+    copiar.addEventListener("click", async () => {
+      const copiou = await copiarTexto(mensagemPara(envio));
+      copiar.textContent = copiou ? "Copiado ✓" : "Falhou";
+      setTimeout(() => { copiar.textContent = "Copiar"; }, 1600);
+    });
+
+    const whatsapp = document.createElement("button");
+    whatsapp.className = "pequeno whatsapp";
+    whatsapp.textContent = "WhatsApp";
+    whatsapp.setAttribute("aria-label", `Enviar a mensagem de ${envio.nome} pelo WhatsApp`);
+    whatsapp.addEventListener("click", () => {
+      window.open("https://wa.me/?text=" + encodeURIComponent(mensagemPara(envio)), "_blank", "noopener");
+    });
+
+    item.append(nome, copiar, whatsapp);
+    lista.append(item);
+  });
+}
+
+function atualizarOrganizador() {
+  const temSorteio = Boolean(sorteioAtual);
+  $("o-sortear").classList.toggle("oculto", temSorteio);
+  $("o-resultado").classList.toggle("oculto", !temSorteio);
+  if (!temSorteio) return;
+
+  // Confere o ciclo a partir dos próprios tokens, sem mostrar quem tirou quem.
+  const pares = sorteioAtual.envios.map((e) => lerToken(e.token));
+  const valido = pares.every(Boolean) && ehCicloUnico(pares, PARTICIPANTES);
+  const status = $("o-status");
+  status.classList.toggle("erro", !valido);
+  status.textContent = valido
+    ? `✓ Sorteio ${sorteioAtual.id}: ciclo único com ${PARTICIPANTES.length} pessoas. Ninguém tira a si mesmo.`
+    : "O sorteio salvo não forma um ciclo único. Faça um novo sorteio.";
+
+  $("o-base").classList.toggle("oculto", ehPaginaPublicada());
+  renderizarEnvios();
+}
+
+function fazerSorteio() {
+  const pares = sortearCiclo(PARTICIPANTES);
+  if (!ehCicloUnico(pares, PARTICIPANTES)) throw new Error("O sorteio não formou um ciclo único.");
+  const id = novoIdSorteio();
+  // A lista segue a ordem de PARTICIPANTES, nunca a ordem do ciclo: assim a lista não revela quem tirou quem.
+  const envios = PARTICIPANTES.map((nome) => {
+    const par = pares.find((p) => p.de === nome);
+    return { nome, token: gerarToken(id, par.de, par.para) };
+  });
+  sorteioAtual = { id, envios };
+  gravarArmazenado(CHAVE_SORTEIO, sorteioAtual);
+  atualizarOrganizador();
+}
+
+function mostrarOrganizador() {
+  listarNomes("o-nomes");
+  $("subtitulo").textContent = "Organizador";
+  document.title = "Amigo Oculto: organizador";
+  const salvo = lerArmazenado(CHAVE_SORTEIO);
+  sorteioAtual = sorteioValido(salvo) ? salvo : null;
+  atualizarOrganizador();
+  mostrarTela("tela-organizador");
+}
+
+// ---- rotas ----
+function rotear() {
+  const token = location.hash.slice(1).trim();
+  if (!token) {
+    mostrarInicio();
+    return;
+  }
+  if (token === ROTA_ORGANIZADOR) {
+    mostrarOrganizador();
+    return;
+  }
+  const dados = lerToken(token);
+  if (dados) {
+    mostrarParticipante(dados);
+    return;
+  }
+  // Limpa o título da tela anterior: um nome de participante não pode ficar na aba.
+  $("subtitulo").textContent = "Sorteio em ciclo único";
+  document.title = "Amigo Oculto";
+  mostrarTela("tela-erro");
+}
+
+$("p-revelar").addEventListener("click", () => {
+  $("p-fechado").classList.add("oculto");
+  $("p-aberto").classList.remove("oculto");
+});
+
+$("p-esconder").addEventListener("click", () => {
+  $("p-aberto").classList.add("oculto");
+  $("p-fechado").classList.remove("oculto");
+});
+
+$("e-voltar").addEventListener("click", () => { location.hash = ""; });
+
+$("o-sortear").addEventListener("click", fazerSorteio);
+
+$("o-novo").addEventListener("click", () => {
+  const confirmou = confirm("Fazer um novo sorteio?\n\nOs links que você já enviou continuam mostrando o sorteio antigo. Depois, envie os links novos para todos.");
+  if (confirmou) fazerSorteio();
+});
+
+$("o-endereco").value = lerArmazenado(CHAVE_ENDERECO) || "";
+$("o-endereco").addEventListener("input", (evento) => {
+  gravarArmazenado(CHAVE_ENDERECO, evento.target.value.trim());
+});
+
+$("c-form").addEventListener("submit", (evento) => {
+  evento.preventDefault();
+  let texto = $("c-codigo").value.trim();
+  const posicao = texto.indexOf("#");
+  if (posicao >= 0) texto = texto.slice(posicao + 1);
+  if (!texto) {
+    $("c-codigo").focus();
+    return;
+  }
+  $("c-codigo").value = "";
+  location.hash = texto;
+});
+
+window.addEventListener("hashchange", rotear);
+rotear();
+</script>
+</body>
+</html>
